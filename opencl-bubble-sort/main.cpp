@@ -27,7 +27,7 @@ fflush(NULL);\
 return 1; \
 }
 
-#define MATRIX_SIZE 16 // matrix square dimension
+#define MATRIX_SIZE 16384 // matrix square dimension
 #define LOCAL_SIZE 8 // for GPU best: 8 CPU: 1
 
 #define MAX_SOURCE_SIZE (1000000)
@@ -175,25 +175,19 @@ int main(int argc, char** argv)
     size_t dim =  numData;
     size_t ldim = LOCAL_SIZE;
     cl_float *host_tab = (cl_float*)malloc(sizeof(cl_float) * numData);
-    cl_float *host_result = (cl_float*)malloc(sizeof(cl_float) * numData);
     
     // initiating source buffer in host
     randomInit(host_tab, numData);
-    std::cout << "Input: ";
-    for (int x = 0; x < numData; x++) {
-        std::cout << host_tab[x] << " ";
-    }
-    std::cout << std::endl;
+//    std::cout << "Input: ";
+//    for (int x = 0; x < numData; x++) {
+//        std::cout << host_tab[x] << " ";
+//    }
+//    std::cout << std::endl;
     
     // allocating source buffer in GPU
     cl_mem device_tab;
-    cl_mem device_result;
-    device_tab = clCreateBuffer(context, CL_MEM_READ_ONLY,
+    device_tab = clCreateBuffer(context, CL_MEM_READ_WRITE,
                               numData * sizeof(cl_float), NULL, &ret);
-    if (ret != CL_SUCCESS)    printf("Error: in allocating buffer A in GPU \n");
-    
-    device_result = clCreateBuffer(context, CL_MEM_WRITE_ONLY,
-                                numData * sizeof(cl_float), NULL, &ret);
     if (ret != CL_SUCCESS)    printf("Error: in allocating buffer A in GPU \n");
     
     // copy source buffer into GPU
@@ -207,9 +201,6 @@ int main(int argc, char** argv)
     if (ret != CL_SUCCESS)    printf("Error: setting the first argument \n");
     
     ret = clSetKernelArg( kernel, 1, sizeof (cl_mem), &device_tab); // 1 indicates the second argument
-    if (ret != CL_SUCCESS)    printf("Error: setting the second argument \n");
-    
-    ret = clSetKernelArg( kernel, 2, sizeof (cl_mem), &device_result); // 2 indicates the second argument
     if (ret != CL_SUCCESS)    printf("Error: setting the second argument \n");
     
     // main function for launching the kernel
@@ -242,23 +233,22 @@ int main(int argc, char** argv)
     //--------------------------------------------------------------------------
     
     // retrieving the buffer
-    ret = clEnqueueReadBuffer (cq, device_result, CL_TRUE, 0, numData * sizeof(cl_float),
-                               host_result, 0, NULL, &event);
+    ret = clEnqueueReadBuffer (cq, device_tab, CL_TRUE, 0, numData * sizeof(cl_float),
+                               host_tab, 0, NULL, &event);
     if (ret != CL_SUCCESS)    printf("Error: retrieving DST buffer into CPU \n");
     
     // Display the result to the screen
     
-    std::cout << "Result: ";
-    for (int x = 0; x < numData; x++) {
-        std::cout << host_result[x] << " ";
-    }
-    std::cout << std::endl;
+//    std::cout << "Result: ";
+//    for (int x = 0; x < numData; x++) {
+//        std::cout << host_tab[x] << " ";
+//    }
+//    std::cout << std::endl;
     
     fflush(NULL);
     ret = clReleaseKernel(kernel);
     ret = clReleaseProgram(program);
     ret = clReleaseMemObject(device_tab);
-    ret = clReleaseMemObject(device_result);
     ret = clReleaseCommandQueue(cq);
     ret = clReleaseContext(context);
     

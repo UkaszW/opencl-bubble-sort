@@ -1,4 +1,4 @@
-__kernel void bubble_sort(const int N, __global const float *tab, __global float *result)
+__kernel void bubble_sort(const int N, __global float *tab)
 {
     int ind, i, j, s;
     float current;
@@ -15,13 +15,11 @@ __kernel void bubble_sort(const int N, __global const float *tab, __global float
             next = tab[j];
             if (next < current)
             {
-                result[i] = next;
-                result[j] = current;
+                tab[i] = next;
+                tab[j] = current;
             }
         }
         // Synchronise
-        barrier(CLK_LOCAL_MEM_FENCE);
-        // Synchronise
-        barrier(CLK_GLOBAL_MEM_FENCE);
+        barrier(CLK_LOCAL_MEM_FENCE | CLK_GLOBAL_MEM_FENCE);
     }
 }
